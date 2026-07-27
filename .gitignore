@@ -43,3 +43,9 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/settings.json
+
+# AI & Editor Tooling Configs
+.agents/
+.claude/
+.windsurf/
+.cursor/
