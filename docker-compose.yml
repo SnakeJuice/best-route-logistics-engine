@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Relational Database
@@ -37,7 +37,7 @@ services:
 
   # Open Source Routing Machine Engine
   osrm:
-    image: osrm/osrm-backend:v5.27.1
+    image: osrm/osrm-backend:latest
     container_name: bestroute_osrm
     restart: always
     ports:
