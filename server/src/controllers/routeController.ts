@@ -92,3 +92,54 @@ export const createOptimizedRoute = async (req: Request, res: Response) => {
       .json({ error: error.message || "Failed to generate route" });
   }
 };
+
+// GET /api/routes - Listar todas las rutas creadas
+export const getRoutes = async (_req: Request, res: Response) => {
+  try {
+    const routes = await prisma.route.findMany({
+      include: {
+        vehicle: true,
+        stops: {
+          include: {
+            order: true,
+          },
+          orderBy: { sequence: "asc" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    res.status(200).json(routes);
+  } catch (error) {
+    console.error("Error fetching routes:", error);
+    res.status(500).json({ error: "Failed to fetch routes" });
+  }
+};
+
+// GET /api/routes/:id - Obtener el detalle completo de una ruta específica
+export const getRouteById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const route = await prisma.route.findUnique({
+      where: { id },
+      include: {
+        vehicle: true,
+        stops: {
+          include: {
+            order: true,
+          },
+          orderBy: { sequence: "asc" },
+        },
+      },
+    });
+
+    if (!route) {
+      return res.status(404).json({ error: "Route not found" });
+    }
+
+    res.status(200).json(route);
+  } catch (error) {
+    console.error("Error fetching route:", error);
+    res.status(500).json({ error: "Failed to fetch route" });
+  }
+};
