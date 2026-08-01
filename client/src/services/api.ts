@@ -54,3 +54,5 @@ export const optimizeRoute = (vehicleId: string, orderIds: string[]) =>
   api
     .post<RouteData>("/routes/optimize", { vehicleId, orderIds })
     .then((res) => res.data);
+export const resetDatabase = () =>
+  api.post("/admin/reset").then((res) => res.data);

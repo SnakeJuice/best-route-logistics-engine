@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { getOrders, createOrder } from "../controllers/orderController";
+import {
+  getOrders,
+  createOrder,
+  resetDatabase,
+} from "../controllers/orderController";
 import { getVehicles } from "../controllers/vehicleController";
 import {
   createOptimizedRoute,
@@ -20,5 +24,8 @@ router.get("/vehicles", getVehicles);
 router.get("/routes", getRoutes);
 router.get("/routes/:id", getRouteById);
 router.post("/routes/optimize", createOptimizedRoute);
+
+// Admin routes
+router.post("/admin/reset", resetDatabase);
 
 export default router;
