@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -25,24 +26,68 @@ export const OrderModal: React.FC<OrderModalProps> = ({
   const [longitude, setLongitude] = useState("");
   const [weightKg, setWeightKg] = useState("100");
   const [loading, setLoading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
 
   useEffect(() => {
     if (initialCoords) {
       setLatitude(initialCoords.lat.toFixed(6));
       setLongitude(initialCoords.lng.toFixed(6));
     } else {
-      setLatitude("-33.4372");
-      setLongitude("-70.6506");
+      setLatitude("");
+      setLongitude("");
     }
-  }, [initialCoords]);
+  }, [initialCoords, isOpen]);
 
   if (!isOpen) return null;
 
+  // Función para geocodificar dirección usando Nominatim (OpenStreetMap)
+  const geocodeAddress = async (
+    searchAddress: string,
+  ): Promise<{ lat: number; lng: number } | null> => {
+    try {
+      setGeocoding(true);
+      // Incluimos Santiago, Chile para acotar la búsqueda local
+      const query = encodeURIComponent(`${searchAddress}, Santiago, Chile`);
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`,
+      );
+
+      if (response.data && response.data.length > 0) {
+        return {
+          lat: parseFloat(response.data[0].lat),
+          lng: parseFloat(response.data[0].lon),
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Error en geocodificación:", error);
+      return null;
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !address || !latitude || !longitude || !weightKg) {
-      alert("Por favor completa todos los campos.");
+    if (!customerName || !address || !weightKg) {
+      alert("Por favor completa el nombre del cliente, dirección y peso.");
       return;
+    }
+
+    let finalLat = parseFloat(latitude);
+    let finalLng = parseFloat(longitude);
+
+    // Si las coordenadas están vacías, geocodificamos la dirección escrita
+    if (isNaN(finalLat) || isNaN(finalLng)) {
+      const coords = await geocodeAddress(address);
+      if (!coords) {
+        alert(
+          "No pudimos encontrar la ubicación de esa dirección. Por favor verifica o ingresa la latitud/longitud manualmente.",
+        );
+        return;
+      }
+      finalLat = coords.lat;
+      finalLng = coords.lng;
     }
 
     try {
@@ -50,13 +95,16 @@ export const OrderModal: React.FC<OrderModalProps> = ({
       await onSubmit({
         customerName,
         address,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        latitude: finalLat,
+        longitude: finalLng,
         weightKg: parseFloat(weightKg),
       });
-      // Reset form
+
+      // Resetear campos
       setCustomerName("");
       setAddress("");
+      setLatitude("");
+      setLongitude("");
       onClose();
     } catch (error) {
       alert("Error creando la orden");
@@ -76,9 +124,7 @@ export const OrderModal: React.FC<OrderModalProps> = ({
             marginBottom: "16px",
           }}
         >
-          <h3 style={{ margin: 0, fontSize: "18px" }}>
-            📦 Crear Nueva Orden de Entrega
-          </h3>
+          <h3 style={{ margin: 0, fontSize: "18px" }}>📦 Crear Nueva Orden</h3>
           <button
             onClick={onClose}
             style={{
@@ -118,6 +164,10 @@ export const OrderModal: React.FC<OrderModalProps> = ({
               style={inputStyle}
               required
             />
+            <span style={{ fontSize: "11px", color: "#64748b" }}>
+              💡 Si no pones coordenadas, buscaremos la dirección
+              automáticamente.
+            </span>
           </div>
 
           <div
@@ -128,25 +178,25 @@ export const OrderModal: React.FC<OrderModalProps> = ({
             }}
           >
             <div>
-              <label style={labelStyle}>Latitud:</label>
+              <label style={labelStyle}>Latitud (Opcional):</label>
               <input
                 type="number"
                 step="any"
+                placeholder="Auto-detectar"
                 value={latitude}
                 onChange={(e) => setLatitude(e.target.value)}
                 style={inputStyle}
-                required
               />
             </div>
             <div>
-              <label style={labelStyle}>Longitud:</label>
+              <label style={labelStyle}>Longitud (Opcional):</label>
               <input
                 type="number"
                 step="any"
+                placeholder="Auto-detectar"
                 value={longitude}
                 onChange={(e) => setLongitude(e.target.value)}
                 style={inputStyle}
-                required
               />
             </div>
           </div>
@@ -173,8 +223,16 @@ export const OrderModal: React.FC<OrderModalProps> = ({
             <button type="button" onClick={onClose} style={cancelButtonStyle}>
               Cancelar
             </button>
-            <button type="submit" disabled={loading} style={submitButtonStyle}>
-              {loading ? "Guardando..." : "➕ Guardar Orden"}
+            <button
+              type="submit"
+              disabled={loading || geocoding}
+              style={submitButtonStyle}
+            >
+              {geocoding
+                ? "🔍 Buscando Dirección..."
+                : loading
+                  ? "Guardando..."
+                  : "➕ Guardar Orden"}
             </button>
           </div>
         </form>
