@@ -7,6 +7,7 @@ interface SidebarProps {
   routes: RouteData[];
   onOptimize: () => void;
   onReset: () => void;
+  onOpenOrderModal: () => void;
   optimizing: boolean;
   resetting: boolean;
 }
@@ -17,6 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   routes,
   onOptimize,
   onReset,
+  onOpenOrderModal,
   optimizing,
   resetting,
 }) => {
@@ -37,7 +39,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         gap: "16px",
       }}
     >
-      {/* Targetas KPI de Resumen */}
       <div
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}
       >
@@ -59,7 +60,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Botones de Acción */}
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
         <button
           onClick={onOptimize}
@@ -74,6 +74,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             : "⚡ Optimizar Siguiente Ruta"}
         </button>
 
+        <button onClick={onOpenOrderModal} style={createButtonStyle}>
+          ➕ Crear Nueva Orden
+        </button>
+
         <button
           onClick={onReset}
           disabled={resetting}
@@ -83,7 +87,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      {/* Detalle de Rutas Generadas */}
       <div style={sectionContainerStyle}>
         <h3 style={{ margin: "0 0 10px 0", fontSize: "16px" }}>
           📍 Rutas Generadas
@@ -145,7 +148,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-// Estilos inline de alta estética
 const kpiCardStyle: React.CSSProperties = {
   backgroundColor: "#f8fafc",
   border: "1px solid #e2e8f0",
@@ -178,7 +180,17 @@ const primaryButtonStyle: React.CSSProperties = {
   fontSize: "14px",
   fontWeight: "bold",
   cursor: "pointer",
-  transition: "background 0.2s",
+};
+
+const createButtonStyle: React.CSSProperties = {
+  backgroundColor: "#16a34a",
+  color: "#ffffff",
+  border: "none",
+  padding: "10px",
+  borderRadius: "8px",
+  fontSize: "13px",
+  fontWeight: "bold",
+  cursor: "pointer",
 };
 
 const secondaryButtonStyle: React.CSSProperties = {
@@ -199,7 +211,7 @@ const sectionContainerStyle: React.CSSProperties = {
   padding: "14px",
   flex: 1,
   overflowY: "auto",
-  maxHeight: "350px",
+  maxHeight: "320px",
 };
 
 const routeCardStyle: React.CSSProperties = {

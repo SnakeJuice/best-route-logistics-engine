@@ -5,12 +5,14 @@ import {
   getRoutes,
   optimizeRoute,
   resetDatabase,
+  createOrder,
   Order,
   Vehicle,
   RouteData,
 } from "./services/api";
 import { MapView } from "./components/MapView";
 import { Sidebar } from "./components/Sidebar";
+import { OrderModal } from "./components/OrderModal";
 
 export function App() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -19,6 +21,13 @@ export function App() {
   const [loading, setLoading] = useState<boolean>(true);
   const [optimizing, setOptimizing] = useState<boolean>(false);
   const [resetting, setResetting] = useState<boolean>(false);
+
+  // Estado del Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCoords, setSelectedCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const fetchData = async () => {
     try {
@@ -41,6 +50,22 @@ export function App() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleMapClick = (lat: number, lng: number) => {
+    setSelectedCoords({ lat, lng });
+    setIsModalOpen(true);
+  };
+
+  const handleCreateOrder = async (orderData: {
+    customerName: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    weightKg: number;
+  }) => {
+    await createOrder(orderData);
+    await fetchData();
+  };
 
   const handleOptimize = async () => {
     const pendingOrders = orders.filter((o) => o.status === "PENDING");
@@ -107,7 +132,6 @@ export function App() {
         color: "#0f172a",
       }}
     >
-      {/* Encabezado Principal */}
       <header
         style={{
           marginBottom: "20px",
@@ -128,11 +152,10 @@ export function App() {
         </h1>
         <p style={{ margin: "4px 0 0 0", color: "#64748b", fontSize: "14px" }}>
           Torre de control para optimización de flotas y ruteo en tiempo real
-          con OSRM
+          con OSRM (Haz clic en el mapa para agregar una orden)
         </p>
       </header>
 
-      {/* Layout Grid: Sidebar + Mapa */}
       <div style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}>
         <Sidebar
           orders={orders}
@@ -140,14 +163,29 @@ export function App() {
           routes={routes}
           onOptimize={handleOptimize}
           onReset={handleReset}
+          onOpenOrderModal={() => {
+            setSelectedCoords(null);
+            setIsModalOpen(true);
+          }}
           optimizing={optimizing}
           resetting={resetting}
         />
 
         <main style={{ flex: 1 }}>
-          <MapView orders={orders} routes={routes} />
+          <MapView
+            orders={orders}
+            routes={routes}
+            onMapClick={handleMapClick}
+          />
         </main>
       </div>
+
+      <OrderModal
+        isOpen={isModalOpen}
+        initialCoords={selectedCoords}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleCreateOrder}
+      />
     </div>
   );
 }

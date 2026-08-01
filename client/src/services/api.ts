@@ -50,9 +50,20 @@ export const getOrders = () =>
   api.get<Order[]>("/orders").then((res) => res.data);
 export const getRoutes = () =>
   api.get<RouteData[]>("/routes").then((res) => res.data);
+
+// 📦 Crear una nueva orden
+export const createOrder = (orderData: {
+  customerName: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+  weightKg: number;
+}) => api.post<Order>("/orders", orderData).then((res) => res.data);
+
 export const optimizeRoute = (vehicleId: string, orderIds: string[]) =>
   api
     .post<RouteData>("/routes/optimize", { vehicleId, orderIds })
     .then((res) => res.data);
+
 export const resetDatabase = () =>
   api.post("/admin/reset").then((res) => res.data);
