@@ -6,40 +6,96 @@ import {
   Popup,
   Polyline,
 } from "react-leaflet";
-import * as L from "leaflet";
+import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Order, RouteData } from "../services/api";
 import { decodePolyline } from "../utils/polyline";
-
-// Corregir íconos de Leaflet en Vite
-if (typeof window !== "undefined") {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-    iconUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-    shadowUrl:
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-  });
-}
 
 interface MapViewProps {
   orders: Order[];
   routes: RouteData[];
 }
 
+// Coordenadas del Depósito Central (Santiago Centro)
 const SANTIAGO_CENTER: [number, number] = [-33.4442, -70.6528];
+
+// 🏢 Icono del Depósito Central
+const depotIcon = L.divIcon({
+  className: "custom-depot-icon",
+  html: `
+    <div style="
+      background-color: #0f172a;
+      color: white;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    ">🏢</div>
+  `,
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+});
+
+// 📦 Icono para Órdenes Pendientes
+const pendingIcon = L.divIcon({
+  className: "custom-pending-icon",
+  html: `
+    <div style="
+      background-color: #f59e0b;
+      color: white;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    ">📦</div>
+  `,
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+});
+
+// 🔢 Icono Numerado para Paradas Secuenciales (1, 2, 3...)
+const createStopIcon = (sequence: number) =>
+  L.divIcon({
+    className: `custom-stop-icon-${sequence}`,
+    html: `
+      <div style="
+        background-color: #2563eb;
+        color: white;
+        border: 2px solid #ffffff;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+        box-shadow: 0 3px 6px rgba(0,0,0,0.35);
+      ">${sequence}</div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
 
 export const MapView: React.FC<MapViewProps> = ({ orders, routes }) => {
   return (
     <div
       style={{
-        height: "550px",
+        height: "580px",
         width: "100%",
         borderRadius: "12px",
         overflow: "hidden",
-        border: "1px solid #ccc",
+        border: "1px solid #cbd5e1",
       }}
     >
       <MapContainer
@@ -52,11 +108,24 @@ export const MapView: React.FC<MapViewProps> = ({ orders, routes }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* 1. Marcadores para Órdenes Pendientes */}
+        {/* 🏢 Marcador del Depósito Central */}
+        <Marker position={SANTIAGO_CENTER} icon={depotIcon}>
+          <Popup>
+            <strong>🏢 Depósito Central</strong>
+            <br />
+            Punto de origen y despacho de flotas
+          </Popup>
+        </Marker>
+
+        {/* 📦 Marcadores para Órdenes Pendientes */}
         {orders
           .filter((order) => order.status === "PENDING")
           .map((order) => (
-            <Marker key={order.id} position={[order.latitude, order.longitude]}>
+            <Marker
+              key={order.id}
+              position={[order.latitude, order.longitude]}
+              icon={pendingIcon}
+            >
               <Popup>
                 <strong>📦 {order.customerName}</strong>
                 <br />
@@ -67,7 +136,7 @@ export const MapView: React.FC<MapViewProps> = ({ orders, routes }) => {
             </Marker>
           ))}
 
-        {/* 2. Trazado de Rutas Optimizadas */}
+        {/* 🛣️ Trazados y Paradas Numeradas */}
         {routes.map((route) => {
           if (!route.polyline) return null;
           const positions = decodePolyline(route.polyline);
@@ -78,13 +147,14 @@ export const MapView: React.FC<MapViewProps> = ({ orders, routes }) => {
                 positions={positions}
                 color="#2563eb"
                 weight={5}
-                opacity={0.8}
+                opacity={0.85}
               />
 
               {route.stops.map((stop) => (
                 <Marker
                   key={stop.id}
                   position={[stop.order.latitude, stop.order.longitude]}
+                  icon={createStopIcon(stop.sequence)}
                 >
                   <Popup>
                     <strong>🛑 Parada #{stop.sequence}</strong>
