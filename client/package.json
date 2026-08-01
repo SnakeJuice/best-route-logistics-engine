@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "@turf/turf": "^7.3.5",
+    "@types/leaflet": "^1.9.22",
+    "axios": "^1.19.0",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
+  }
+}
